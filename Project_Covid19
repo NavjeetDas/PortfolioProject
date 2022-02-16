@@ -1,0 +1,223 @@
+--CovidVaccination Table
+
+SELECT
+    *
+FROM 
+    case_study.CovidVaccinations
+ORDER BY 
+    3, 4
+
+--CovidDeaths Table
+
+SELECT
+    *
+FROM 
+    case_study.CovidDeaths
+ORDER BY 
+    3, 4
+
+## Querying CovidDeaths data
+-- Selecting Data that we are going to be using
+
+SELECT
+    location,
+    date,
+    total_cases,
+    new_cases,
+    total_deaths,
+    population
+FROM 
+    case_study.CovidDeaths
+ORDER BY 
+    1, 2
+
+-- Total Cases vs. Total Deaths 
+
+SELECT
+    location,
+    date,
+    total_cases,
+    total_deaths,
+    (total_deaths/total_cases)*100 AS death_percentage
+FROM 
+    case_study.CovidDeaths
+ORDER BY 
+    1, 2
+
+-- Total Cases vs. Total Deaths in India
+-- Shows death percentage by total cases in India
+
+SELECT
+    location,
+    date,
+    total_cases,
+    total_deaths,
+    (total_deaths/total_cases)*100 AS death_percentage
+FROM 
+    case_study.CovidDeaths
+WHERE
+    location like 'India'
+ORDER BY 
+    1, 2
+
+-- Total Cases vs. Population in India
+--Shows percentage of total cases on our population
+
+SELECT
+    location,
+    date,
+    population,
+    total_cases,
+    (total_cases/population)*100 AS cases_percentage
+FROM 
+    case_study.CovidDeaths
+WHERE
+    location like 'India'
+ORDER BY 
+    1, 2
+
+-- Countries with highest infection rates compared per population
+
+SELECT
+    location,
+    population,
+    MAX(total_cases) AS highest_infection_count,
+    MAX(total_cases/population)*100 AS highest_infection_rates
+FROM 
+    case_study.CovidDeaths
+GROUP BY
+    location,
+    population
+ORDER BY 
+    highest_Infection_Percent DESC
+
+-- Countries with highest death rates compared per population
+
+SELECT
+    location,
+    population,
+    MAX(total_deaths) AS total_death_count,
+    MAX(total_deaths/population)*100 AS highest_death_rates
+FROM 
+    case_study.CovidDeaths
+WHERE 
+    continent is not null 
+GROUP BY
+    location,
+    population
+ORDER BY 
+    highest_death_rates DESC
+
+-- looking into numbers by continent
+-- showing continents with highest death counts
+
+SELECT
+    continent,
+    MAX(total_deaths) AS total_death_count,
+FROM 
+    case_study.CovidDeaths
+WHERE 
+    continent is not null 
+GROUP BY
+    continent
+ORDER BY 
+    total_death_count DESC
+
+-- WORLD NUMBERS
+
+SELECT 
+    SUM(new_cases) AS total_cases,
+    SUM(new_deaths) AS total_deaths,
+    SUM(new_deaths)/SUM(new_cases)*100 AS death_percent
+FROM 
+    case_study.CovidDeaths
+WHERE 
+    continent is not null 
+
+
+## Querying CovidVaccination data
+## CovidVactination data
+-- JOIN
+
+SELECT 
+    *
+FROM 
+    case_study.CovidDeaths AS dea
+JOIN 
+    case_study.CovidVaccinations AS vac ON
+    dea.location = vac.location AND 
+    dea.date = vac.date
+
+
+-- Looking at total population vs. total vaccination
+
+SELECT 
+    dea.continent,
+    dea.location,
+    dea.date,
+    dea.population,
+    vac.new_vaccinations
+FROM 
+    case_study.CovidDeaths AS dea
+JOIN 
+    case_study.CovidVaccinations AS vac ON
+    dea.location = vac.location AND 
+    dea.date = vac.date
+WHERE 
+    dea.continent is not null 
+ORDER BY 
+    2,3
+
+-- Rolling sum of vaccination count
+
+
+SELECT 
+    dea.continent,
+    dea.location,
+    dea.date,
+    dea.population,
+    vac.new_vaccinations,
+    SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) AS RollingVaccinationCount
+FROM 
+    case_study.CovidDeaths AS dea
+JOIN 
+    case_study.CovidVaccinations AS vac ON
+    dea.location = vac.location AND 
+    dea.date = vac.date
+WHERE 
+    dea.continent is not null
+ORDER BY 
+    2,3
+
+-- Vaccination rates per population
+
+WITH PopvsVac AS (
+
+SELECT 
+    dea.continent,
+    dea.location,
+    dea.date,
+    dea.population,
+    vac.new_vaccinations,
+    SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) AS RollingVaccinationCount
+FROM 
+    case_study.CovidDeaths AS dea
+JOIN 
+    case_study.CovidVaccinations AS vac ON
+    dea.location = vac.location AND 
+    dea.date = vac.date
+WHERE 
+    dea.continent is not null
+ORDER BY 
+    2,3
+)
+
+SELECT 
+    *,
+    (RollingVaccinationCount/Population) *100 AS rolling_vac_percent_increase
+FROM 
+    PopvsVac
+   
+
+
+
