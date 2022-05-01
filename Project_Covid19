@@ -89,7 +89,7 @@ GROUP BY
     location,
     population
 ORDER BY 
-    highest_Infection_Percent DESC
+    highest_infection_rates DESC
 
 -- Countries with highest death rates compared per population
 
